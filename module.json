@@ -1,0 +1,23 @@
+{
+  "id": "theme-glass-v13",
+  "title": "Theme: Glass (v13)",
+  "description": "Foundry VTT v13용 글래스 테마. 원작 mech-tools/theme-glass의 컨셉을 유지한 개인용 포트.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "Personal port of Theme: Glass by Maxime (mech-tools)"
+    }
+  ],
+  "esmodules": ["module.js"],
+  "styles": ["styles/theme.css"],
+  "flags": {
+    "hotReload": {
+      "extensions": ["css"],
+      "paths": ["styles/theme.css"]
+    }
+  }
+}
