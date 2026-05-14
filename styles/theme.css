@@ -1,7 +1,175 @@
-/* Theme: Glass (v13) — 작업 시작 전 자리표시자 */
+/* Theme: Glass (v13) — first iteration
+ * 원작 mech-tools/theme-glass 의 "씬 배경이 비치는 프로스티드 글래스 UI" 컨셉.
+ * 모든 변수는 :root 에 두었으니 디자인 토큰처럼 조정 가능. */
 
-/* 모듈이 정상 로드됐는지 눈으로 확인하기 위한 임시 스타일.
-   사이드바 배경을 살짝 붉게 만듭니다. 작업 시작하면 지웁니다. */
+:root {
+  /* 패널 배경 (낮을수록 더 투명) */
+  --glass-bg: rgba(15, 20, 30, 0.45);
+  --glass-bg-strong: rgba(15, 20, 30, 0.65);
+  --glass-bg-subtle: rgba(15, 20, 30, 0.25);
+
+  /* 블러 강도 */
+  --glass-blur: 12px;
+  --glass-saturate: 140%;
+
+  /* 보더 — 글래스의 가장자리 하이라이트 */
+  --glass-border-color: rgba(255, 255, 255, 0.08);
+  --glass-border: 1px solid var(--glass-border-color);
+
+  /* 그림자 — 패널이 떠 있는 느낌 */
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+
+  /* 텍스트 색 (투명 위에서도 잘 보이게) */
+  --glass-text: #e8eaed;
+  --glass-text-dim: #b0b4ba;
+}
+
+/* ===================================================================
+ * 공용 글래스 믹스인 역할
+ * 같은 효과를 여러 곳에 쓰니까 클래스로 빼면 좋지만,
+ * Foundry 마크업은 우리가 못 바꾸므로 셀렉터 단위로 반복 적용한다.
+ * =================================================================== */
+
+/* ---- 사이드바 (오른쪽 패널) ---- */
 #sidebar {
-  background: rgba(255, 0, 0, 0.15) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-left: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+#sidebar .tab,
+#sidebar section.tab,
+#sidebar .sidebar-tab {
+  background: transparent !important;
+}
+
+#sidebar #sidebar-tabs,
+#sidebar nav.tabs {
+  background: var(--glass-bg-subtle);
+  border-bottom: var(--glass-border);
+}
+
+/* ---- 씬 컨트롤 (왼쪽 팔레트) ---- */
+#scene-controls,
+#controls {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-right: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+#scene-controls .control-tools,
+#controls .control-tools {
+  background: var(--glass-bg-subtle) !important;
+  border-left: var(--glass-border);
+}
+
+/* ---- 핫바 (아래) ---- */
+#hotbar {
+  background: transparent !important;
+}
+
+#hotbar #macro-list,
+#hotbar .macro-list {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: var(--glass-border);
+  border-radius: 6px;
+  box-shadow: var(--glass-shadow);
+}
+
+#hotbar .macro {
+  background: rgba(0, 0, 0, 0.25);
+  border: var(--glass-border);
+}
+
+/* ---- 씬 네비게이션 (위쪽 탭) ---- */
+#scene-navigation,
+#navigation {
+  background: transparent !important;
+}
+
+#scene-navigation .scene,
+#navigation .scene,
+#scene-navigation nav,
+#navigation nav {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: var(--glass-border);
+  border-radius: 6px;
+}
+
+/* ---- 플레이어 목록 (왼쪽 아래) ---- */
+#players {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: var(--glass-border);
+  border-radius: 6px 6px 0 0;
+  box-shadow: var(--glass-shadow);
+}
+
+/* ---- ApplicationV2 윈도우 (시트, 다이얼로그 등) ---- */
+.application,
+dialog.application,
+.window-app {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.application .window-content,
+.window-app .window-content {
+  background: transparent !important;
+}
+
+.application .window-header,
+.window-app .window-header {
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: var(--glass-border);
+  backdrop-filter: none;
+}
+
+/* ---- 채팅 메시지 ---- */
+#chat-log .chat-message,
+#sidebar .chat-message {
+  background: var(--glass-bg-subtle) !important;
+  border: var(--glass-border);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ---- 채팅 입력창 ---- */
+#chat-form,
+#chat-message {
+  background: var(--glass-bg) !important;
+  border: var(--glass-border);
+}
+
+/* ---- 공용: 입력 요소 ---- */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: var(--glass-border) !important;
+  color: var(--glass-text);
+}
+
+/* ---- 공용: 가독성 보강 ---- */
+#sidebar,
+#scene-controls,
+#hotbar,
+#players,
+#scene-navigation {
+  color: var(--glass-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
