@@ -173,3 +173,50 @@ textarea {
   color: var(--glass-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
+
+/* ===================================================================
+ * 커서 — 클릭 가능한 요소에 손가락 커서 적용
+ * (원본 theme-glass 가 추가했던 UX 개선 규칙)
+ * =================================================================== */
+
+.document-id-link,
+.header-button,
+.context-item,
+.scene-control,
+.control-tool,
+#nav-toggle,
+.nav-item,
+#players h3,
+#bar-toggle,
+#macro-directory,
+.page-control,
+.page-title,
+.heading,
+.directory-header .action-buttons button,
+.header-search button,
+button:not([disabled]),
+a[data-action],
+[data-action]:not(input):not(select):not(textarea),
+.tab-link,
+.window-header .header-button,
+nav .item {
+  cursor: pointer;
+}
+
+/* 플레이어 목록 항목 — 우클릭 메뉴 있음 */
+#player-list li.player,
+#players li.player {
+  cursor: context-menu;
+}
+
+/* 드래그 가능한 요소 */
+.window-header,
+.macro,
+.scene-control[draggable="true"],
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
