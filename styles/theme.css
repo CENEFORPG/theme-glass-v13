@@ -4,24 +4,26 @@
 
 :root {
   /* 패널 배경 (낮을수록 더 투명) */
-  --glass-bg: rgba(15, 20, 30, 0.45);
-  --glass-bg-strong: rgba(15, 20, 30, 0.65);
-  --glass-bg-subtle: rgba(15, 20, 30, 0.25);
+  --glass-bg: rgba(20, 25, 35, 0.38);
+  --glass-bg-strong: rgba(20, 25, 35, 0.55);
+  --glass-bg-subtle: rgba(20, 25, 35, 0.22);
 
   /* 블러 강도 */
-  --glass-blur: 12px;
-  --glass-saturate: 140%;
+  --glass-blur: 10px;
+  --glass-saturate: 130%;
 
   /* 보더 — 글래스의 가장자리 하이라이트 */
-  --glass-border-color: rgba(255, 255, 255, 0.08);
+  --glass-border-color: rgba(255, 255, 255, 0.1);
   --glass-border: 1px solid var(--glass-border-color);
 
   /* 그림자 — 패널이 떠 있는 느낌 */
   --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
 
   /* 텍스트 색 (투명 위에서도 잘 보이게) */
-  --glass-text: #e8eaed;
-  --glass-text-dim: #b0b4ba;
+  --glass-text: #f0f2f5;
+  --glass-text-dim: #c5c9cf;
+  --glass-text-heading: #ffffff;
+  --glass-accent: #f59f00;
 }
 
 /* ===================================================================
@@ -157,11 +159,157 @@ dialog.application,
 input[type="text"],
 input[type="number"],
 input[type="password"],
+input[type="search"],
+input[type="email"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
 select,
 textarea {
-  background: rgba(0, 0, 0, 0.3) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
   border: var(--glass-border) !important;
+  color: var(--glass-text) !important;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid var(--glass-accent);
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 셀렉트 박스의 드롭다운 옵션 — 브라우저가 다크 BG로 렌더링 */
+option {
+  background: #1a1f2a;
   color: var(--glass-text);
+}
+
+/* 체크박스/라디오 — 글래스 BG에서 보이게 강조 색 */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--glass-accent);
+}
+
+/* range 슬라이더 */
+input[type="range"] {
+  accent-color: var(--glass-accent);
+}
+
+/* 버튼 — 어두운 BG에서 보이도록 */
+button:not(.icon-only):not(.header-button),
+.application button,
+.window-app button {
+  background: rgba(255, 255, 255, 0.08);
+  border: var(--glass-border);
+  color: var(--glass-text);
+}
+
+button:not(.icon-only):not(.header-button):hover,
+.application button:hover,
+.window-app button:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--glass-text-heading);
+}
+
+/* ===================================================================
+ * 윈도우 내부 텍스트 가독성 — 핵심 픽스
+ * Foundry 기본이 밝은 BG 가정이라 본문 텍스트가 어두운 색이고,
+ * 우리 글래스 BG에서는 안 보임. 강제로 밝게 잡는다.
+ * =================================================================== */
+
+.application,
+.window-app,
+dialog.application {
+  color: var(--glass-text);
+}
+
+.application h1,
+.application h2,
+.application h3,
+.application h4,
+.application h5,
+.application h6,
+.window-app h1,
+.window-app h2,
+.window-app h3,
+.window-app h4,
+.window-app h5,
+.window-app h6 {
+  color: var(--glass-text-heading);
+  border-bottom-color: var(--glass-border-color);
+}
+
+.application label,
+.application legend,
+.window-app label,
+.window-app legend {
+  color: var(--glass-text);
+}
+
+/* 설명/힌트 — 가장 안 보이던 부분. 회색이지만 약간 밝게 */
+.application .notes,
+.application .hint,
+.application p.notes,
+.application p.hint,
+.application .form-fields > p,
+.application .form-group > p,
+.application .form-group .notes,
+.application .form-group .hint,
+.window-app .notes,
+.window-app .hint,
+.window-app p.notes,
+.window-app p.hint,
+.window-app .form-fields > p,
+.window-app .form-group > p {
+  color: var(--glass-text-dim) !important;
+}
+
+/* 설정창 좌측 탭 메뉴 */
+.application nav .item,
+.application .tabs .item,
+.window-app nav .item,
+.window-app .tabs .item,
+.categories .category-tab {
+  color: var(--glass-text);
+}
+
+.application nav .item.active,
+.application .tabs .item.active,
+.window-app nav .item.active,
+.window-app .tabs .item.active,
+.categories .category-tab.active {
+  color: var(--glass-text-heading);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
+/* form-group 내부 일반 텍스트 */
+.application .form-group,
+.window-app .form-group,
+.application .form-fields,
+.window-app .form-fields {
+  color: var(--glass-text);
+}
+
+/* 카테고리/필터 헤더 */
+.application .filters,
+.application .directory-header,
+.window-app .filters {
+  color: var(--glass-text);
+}
+
+/* 링크는 강조색 */
+.application a,
+.window-app a {
+  color: #6db8ff;
+}
+
+.application a:hover,
+.window-app a:hover {
+  color: #99cfff;
 }
 
 /* ---- 공용: 가독성 보강 ---- */
