@@ -24,6 +24,12 @@
   --glass-text-dim: #c5c9cf;
   --glass-text-heading: #ffffff;
   --glass-accent: #f59f00;
+
+  /* 채팅 전용 텍스트 색 — 사이드바와 다르게 가고 싶을 때 */
+  --glass-chat-text: #f0f2f5;
+
+  /* 텍스트 그림자 (강도는 JS 설정으로 동적 조정) */
+  --glass-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 /* ===================================================================
@@ -319,7 +325,53 @@ dialog.application {
 #players,
 #scene-navigation {
   color: var(--glass-text);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--glass-text-shadow);
+}
+
+/* ---- 채팅 전용 텍스트 색 (사이드바 색과 분리) ---- */
+#chat-log,
+#chat-log .chat-message,
+#chat-log .chat-message *,
+#chat-log .message-content,
+#chat-log .message-header,
+#chat-log .message-sender,
+#chat-log .message-metadata,
+#chat-log .message-timestamp {
+  color: var(--glass-chat-text);
+}
+
+/* 굵게 강조된 부분, 링크 등은 본문보다 살짝 더 밝게 */
+#chat-log strong,
+#chat-log b,
+#chat-log .message-sender {
+  color: color-mix(in srgb, var(--glass-chat-text) 100%, white 15%);
+}
+
+/* ===================================================================
+ * 같은 화자가 연속으로 말할 때 메시지 사이 구분선 제거
+ * (JS 가 .glass-same-speaker / .glass-has-follower 클래스를 붙임)
+ * =================================================================== */
+
+#chat-log .chat-message.glass-same-speaker {
+  border-top: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 4px !important;
+}
+
+#chat-log .chat-message.glass-has-follower {
+  border-bottom: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 4px !important;
+}
+
+/* 연속 메시지의 헤더는 시간만 살짝 줄여서 시각적 묶음 강조 (선택적) */
+#chat-log .chat-message.glass-same-speaker .message-sender {
+  opacity: 0.7;
+  font-size: 0.9em;
 }
 
 /* ===================================================================

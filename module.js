@@ -74,6 +74,32 @@ const SETTINGS = {
     type: String,
     default: "#f0f2f5",
   },
+  chatTextColor: {
+    name: "채팅 텍스트 색",
+    hint: "채팅창 메시지의 텍스트 색. 기본 텍스트 색과 따로 설정 가능 (HEX 코드).",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "#f0f2f5",
+  },
+  textShadowStrength: {
+    name: "텍스트 그림자 강도",
+    hint: "UI 텍스트(사이드바·채팅 등)의 그림자 진하기. 0이면 그림자 없음.",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0, max: 1, step: 0.05 },
+    default: 0.6,
+  },
+  mergeSameSpeakerChats: {
+    name: "같은 화자 채팅 합치기",
+    hint: "같은 사람/캐릭터가 연속으로 말할 때 메시지 사이의 구분선을 제거합니다.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => requestAnimationFrame(tagSameSpeaker),
+  },
 };
 
 /* ---------- 헬퍼: HEX → "r, g, b" ---------- */
@@ -112,6 +138,47 @@ function applySettings() {
 
   root.style.setProperty("--glass-accent", get("accentColor"));
   root.style.setProperty("--glass-text", get("textColor"));
+  root.style.setProperty("--glass-chat-text", get("chatTextColor"));
+
+  const shadow = get("textShadowStrength");
+  root.style.setProperty(
+    "--glass-text-shadow",
+    `0 1px 2px rgba(0, 0, 0, ${shadow})`
+  );
+}
+
+/* ---------- 같은 화자 연속 메시지 태깅 ---------- */
+function tagSameSpeaker() {
+  const log = document.querySelector("#chat-log");
+  if (!log) return;
+
+  const enabled =
+    game.settings?.get?.(MODULE_ID, "mergeSameSpeakerChats") ?? true;
+
+  const messages = Array.from(log.querySelectorAll(".chat-message"));
+
+  // 1차: 클래스 초기화
+  for (const m of messages) {
+    m.classList.remove("glass-same-speaker", "glass-has-follower");
+  }
+
+  // 비활성화 시 태깅 스킵
+  if (!enabled) return;
+
+  // 2차: 화자 비교로 태깅
+  let prevSender = null;
+  let prevEl = null;
+  for (const msg of messages) {
+    const senderEl = msg.querySelector(".message-sender");
+    const sender = (senderEl?.textContent || msg.dataset.authorId || "").trim();
+
+    if (sender && sender === prevSender && prevEl) {
+      msg.classList.add("glass-same-speaker");
+      prevEl.classList.add("glass-has-follower");
+    }
+    prevSender = sender;
+    prevEl = msg;
+  }
 }
 
 /* ---------- Hook 등록 ---------- */
@@ -127,5 +194,13 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   applySettings();
+  requestAnimationFrame(tagSameSpeaker);
   console.log(`${MODULE_ID} | ready, settings applied`);
 });
+
+/* 채팅 메시지가 새로 들어오거나 삭제될 때 재태깅
+ * v13 의 ApplicationV2 채팅은 renderChatMessageHTML, 구버전 호환으로 renderChatMessage 도 함께 처리 */
+Hooks.on("renderChatMessageHTML", () => requestAnimationFrame(tagSameSpeaker));
+Hooks.on("renderChatMessage", () => requestAnimationFrame(tagSameSpeaker));
+Hooks.on("deleteChatMessage", () => requestAnimationFrame(tagSameSpeaker));
+Hooks.on("renderChatLog", () => requestAnimationFrame(tagSameSpeaker));
