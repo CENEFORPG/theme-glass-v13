@@ -328,23 +328,62 @@ dialog.application {
   text-shadow: var(--glass-text-shadow);
 }
 
-/* ---- 채팅 전용 텍스트 색 (사이드바 색과 분리) ---- */
+/* ---- 채팅 전용 텍스트 색 (사이드바 색과 분리)
+ * Foundry 기본 색이 강하게 박혀있어 !important + 광범위 셀렉터 필요 */
 #chat-log,
+.chat-log,
 #chat-log .chat-message,
-#chat-log .chat-message *,
-#chat-log .message-content,
-#chat-log .message-header,
-#chat-log .message-sender,
-#chat-log .message-metadata,
-#chat-log .message-timestamp {
-  color: var(--glass-chat-text);
+.chat-log .chat-message,
+#chat-log .chat-message *:not(button):not(input):not(select):not(textarea):not([style*="color"]),
+.chat-log .chat-message *:not(button):not(input):not(select):not(textarea):not([style*="color"]),
+.chat-sidebar .chat-message,
+.chat-sidebar .chat-message *:not(button):not(input):not(select):not(textarea):not([style*="color"]),
+section.chat-sidebar,
+section.chat-sidebar *:not(button):not(input):not(select):not(textarea):not([style*="color"]),
+.chat-message,
+.chat-message .message-content,
+.chat-message .message-header,
+.chat-message .message-sender,
+.chat-message .message-metadata,
+.chat-message .message-timestamp,
+.chat-message p,
+.chat-message div:not([style*="color"]) {
+  color: var(--glass-chat-text) !important;
 }
 
-/* 굵게 강조된 부분, 링크 등은 본문보다 살짝 더 밝게 */
+/* 굵게 강조된 부분은 본문보다 살짝 더 밝게 */
 #chat-log strong,
 #chat-log b,
-#chat-log .message-sender {
-  color: color-mix(in srgb, var(--glass-chat-text) 100%, white 15%);
+.chat-message strong,
+.chat-message b,
+.chat-message .message-sender {
+  color: color-mix(in srgb, var(--glass-chat-text) 100%, white 15%) !important;
+}
+
+/* ===================================================================
+ * 글래스 효과 제외 — .glass-skip 이 붙은 요소는 글래스 효과를 받지 않음
+ * JS 가 사용자 설정 "글래스 효과 제외할 윈도우" 에서 매칭된 요소에 클래스 부여
+ * =================================================================== */
+
+.glass-skip,
+.application.glass-skip,
+.window-app.glass-skip,
+dialog.application.glass-skip {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.glass-skip .window-content,
+.glass-skip .window-header,
+.glass-skip > section,
+.glass-skip > div {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
 }
 
 /* ===================================================================

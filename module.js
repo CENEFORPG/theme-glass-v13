@@ -100,6 +100,15 @@ const SETTINGS = {
     default: true,
     onChange: () => requestAnimationFrame(tagSameSpeaker),
   },
+  glassSkipList: {
+    name: "글래스 효과 제외할 윈도우",
+    hint: "여기 적힌 키워드를 ID 또는 클래스에 포함한 모듈/윈도우는 글래스 효과(배경·블러)를 받지 않습니다. 쉼표로 구분 (예: party-hud, dice-tray). F12 → 해당 요소 우클릭 → Inspect 로 id/class 확인 가능.",
+    scope: "client",
+    config: true,
+    type: String,
+    default: "",
+    onChange: () => requestAnimationFrame(applyGlassSkips),
+  },
 };
 
 /* ---------- 헬퍼: HEX → "r, g, b" ---------- */
@@ -145,6 +154,87 @@ function applySettings() {
     "--glass-text-shadow",
     `0 1px 2px rgba(0, 0, 0, ${shadow})`
   );
+}
+
+/* ---------- 글래스 효과 제외 적용 ---------- */
+function applyGlassSkips() {
+  // 이전 표시 모두 초기화
+  document.querySelectorAll(".glass-skip").forEach((el) => {
+    el.classList.remove("glass-skip");
+  });
+
+  const raw = game.settings?.get?.(MODULE_ID, "glassSkipList") || "";
+  const terms = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (!terms.length) return;
+
+  // id 또는 class 에 키워드를 포함한 요소 찾기 (대소문자 무시)
+  for (const term of terms) {
+    const safe = CSS.escape(term);
+    try {
+      document
+        .querySelectorAll(`[id*="${safe}" i], [class*="${safe}" i]`)
+        .forEach((el) => el.classList.add("glass-skip"));
+    } catch (e) {
+      console.warn(`${MODULE_ID} | invalid skip term: "${term}"`, e);
+    }
+  }
+}
+
+/* ---------- 색상 설정 입력칸에 컬러 피커 끼워넣기 ---------- */
+const COLOR_SETTING_KEYS = [
+  "bgBaseColor",
+  "accentColor",
+  "textColor",
+  "chatTextColor",
+];
+
+function isValidHex(s) {
+  return /^#([0-9a-fA-F]{3}){1,2}$/.test((s || "").trim());
+}
+
+function injectColorPreviews(htmlOrJq) {
+  const root = htmlOrJq?.jquery ? htmlOrJq[0] : htmlOrJq;
+  if (!root || !root.querySelector) return;
+
+  for (const key of COLOR_SETTING_KEYS) {
+    const input = root.querySelector(`input[name="${MODULE_ID}.${key}"]`);
+    if (!input || input.dataset.glassSwatchAttached === "true") continue;
+    input.dataset.glassSwatchAttached = "true";
+
+    // 네이티브 컬러 피커 (스와치 + 색상 선택기 역할 겸함)
+    const picker = document.createElement("input");
+    picker.type = "color";
+    picker.value = isValidHex(input.value) ? input.value : "#000000";
+    picker.title = "클릭해서 색상 선택";
+    picker.style.cssText = [
+      "width: 32px",
+      "height: 32px",
+      "margin-left: 8px",
+      "padding: 0",
+      "border: 1px solid var(--glass-border-color, rgba(255,255,255,0.2))",
+      "border-radius: 4px",
+      "background: transparent",
+      "cursor: pointer",
+      "vertical-align: middle",
+      "flex-shrink: 0",
+    ].join(";");
+
+    // 양방향 동기화
+    picker.addEventListener("input", () => {
+      input.value = picker.value;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    input.addEventListener("input", () => {
+      if (isValidHex(input.value)) picker.value = input.value;
+    });
+
+    // 입력칸 바로 옆에 삽입
+    input.insertAdjacentElement("afterend", picker);
+  }
 }
 
 /* ---------- 같은 화자 연속 메시지 태깅 ---------- */
@@ -194,7 +284,10 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   applySettings();
-  requestAnimationFrame(tagSameSpeaker);
+  requestAnimationFrame(() => {
+    tagSameSpeaker();
+    applyGlassSkips();
+  });
   console.log(`${MODULE_ID} | ready, settings applied`);
 });
 
@@ -204,3 +297,13 @@ Hooks.on("renderChatMessageHTML", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("renderChatMessage", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("deleteChatMessage", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("renderChatLog", () => requestAnimationFrame(tagSameSpeaker));
+
+/* 윈도우가 새로 그려질 때마다 글래스 제외 규칙 재적용
+ * (Party HUD 같이 후행 로드되는 모듈도 잡기 위해) */
+Hooks.on("renderApplication", () => requestAnimationFrame(applyGlassSkips));
+Hooks.on("renderApplicationV2", () => requestAnimationFrame(applyGlassSkips));
+
+/* 설정 다이얼로그 열릴 때 컬러 피커 끼워넣기 */
+Hooks.on("renderSettingsConfig", (app, html) => {
+  requestAnimationFrame(() => injectColorPreviews(html));
+});
