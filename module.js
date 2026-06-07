@@ -101,13 +101,13 @@ const SETTINGS = {
     onChange: () => requestAnimationFrame(tagSameSpeaker),
   },
   glassSkipList: {
-    name: "글래스 효과 제외할 윈도우",
-    hint: "여기 적힌 키워드를 ID 또는 클래스에 포함한 모듈/윈도우는 글래스 효과(배경·블러)를 받지 않습니다. 쉼표로 구분 (예: party-hud, dice-tray). F12 → 해당 요소 우클릭 → Inspect 로 id/class 확인 가능.",
+    name: "추가로 제외할 윈도우 (선택)",
+    hint: "기본적으로 서드파티 모듈 윈도우는 자동으로 제외됩니다. 자동 판별이 잘 안 된 경우에만 여기에 키워드를 쉼표로 추가 (예: party-hud).",
     scope: "client",
     config: true,
     type: String,
     default: "",
-    onChange: () => requestAnimationFrame(applyGlassSkips),
+    onChange: () => requestAnimationFrame(reEvaluateAllSkips),
   },
 };
 
@@ -156,30 +156,97 @@ function applySettings() {
   );
 }
 
-/* ---------- 글래스 효과 제외 적용 ---------- */
-function applyGlassSkips() {
-  // 이전 표시 모두 초기화
-  document.querySelectorAll(".glass-skip").forEach((el) => {
-    el.classList.remove("glass-skip");
-  });
+/* ---------- 글래스 효과 자동 스킵 (모듈 간섭 방지) ----------
+ * 윈도우의 JS 클래스가 Foundry 코어 클래스를 상속하는지 검사.
+ * 상속하면 코어 UI (글래스 적용 대상), 아니면 서드파티 모듈 (스킵).
+ * 사용자 수동 목록은 추가 제외/포함 용도로 작동. */
 
-  const raw = game.settings?.get?.(MODULE_ID, "glassSkipList") || "";
-  const terms = raw
+const FOUNDRY_CORE_APP_NAMES = new Set([
+  // 사이드바·핫바·네비 등 v13 ApplicationV2 chrome
+  "Sidebar", "SidebarTab",
+  "ChatLog", "CombatTracker",
+  "ActorDirectory", "ItemDirectory", "JournalDirectory",
+  "SceneDirectory", "PlaylistDirectory", "MacroDirectory",
+  "CompendiumDirectory", "CardsDirectory", "RollTableDirectory",
+  "PlayerList", "Players", "Hotbar",
+  "SceneControls", "SceneNavigation", "MainNavigation",
+  "Notifications",
+  // 다이얼로그
+  "Dialog", "DialogV2",
+  // 도큐먼트 시트 (커스텀 상속도 잡힘)
+  "ActorSheet", "ItemSheet",
+  "JournalSheet", "JournalEntrySheet",
+  "JournalEntryPageSheet", "JournalTextPageSheet", "JournalImagePageSheet",
+  "MacroConfig", "PlaylistConfig", "RollTableConfig",
+  "SceneConfig", "TokenConfig",
+  "PrototypeTokenConfig", "DefaultTokenConfig",
+  "CardsConfig", "CardConfig",
+  "AmbientLightConfig", "AmbientSoundConfig",
+  "DrawingConfig", "MeasuredTemplateConfig",
+  "WallConfig", "TileConfig", "NoteConfig",
+  "CombatantConfig", "UserConfig",
+  // 설정 다이얼로그
+  "SettingsConfig", "ClientSettingsConfig",
+  "WorldConfig", "PermissionConfig",
+  "ModuleManagement", "AVConfig", "AVSettingsConfig",
+  "GridConfig", "InvitationLinks", "KeybindingsConfig",
+  "DocumentOwnershipConfig",
+  // 컴펜디움·파일
+  "Compendium", "CompendiumCollection",
+  "FilePicker", "ImagePopout",
+]);
+
+function isCoreFoundryApp(app) {
+  if (!app) return false;
+  let ctor = app.constructor;
+  // 프로토타입 체인을 따라 올라가며 코어 클래스 이름 매칭
+  while (ctor && ctor.name) {
+    if (FOUNDRY_CORE_APP_NAMES.has(ctor.name)) return true;
+    ctor = Object.getPrototypeOf(ctor);
+  }
+  return false;
+}
+
+function evaluateAndApplySkip(app, html) {
+  const root = html?.jquery ? html[0] : html;
+  if (!root || !root.classList) return;
+
+  const id = (root.id || "").toLowerCase();
+  const cls =
+    typeof root.className === "string"
+      ? root.className.toLowerCase()
+      : (root.classList?.toString?.() || "").toLowerCase();
+
+  // 1) 수동 스킵 목록 — 강제 제외
+  const manualSkip = (game.settings?.get?.(MODULE_ID, "glassSkipList") || "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
-  if (!terms.length) return;
+  if (manualSkip.some((t) => id.includes(t) || cls.includes(t))) {
+    root.classList.add("glass-skip");
+    return;
+  }
 
-  // id 또는 class 에 키워드를 포함한 요소 찾기 (대소문자 무시)
-  for (const term of terms) {
-    const safe = CSS.escape(term);
-    try {
-      document
-        .querySelectorAll(`[id*="${safe}" i], [class*="${safe}" i]`)
-        .forEach((el) => el.classList.add("glass-skip"));
-    } catch (e) {
-      console.warn(`${MODULE_ID} | invalid skip term: "${term}"`, e);
-    }
+  // 2) 자동 — 코어 아닌 경우 스킵
+  if (!isCoreFoundryApp(app)) {
+    root.classList.add("glass-skip");
+  } else {
+    root.classList.remove("glass-skip");
+  }
+}
+
+function reEvaluateAllSkips() {
+  // V1 windows + V2 instances 모두 처리
+  const apps = new Set();
+  if (typeof ui !== "undefined" && ui?.windows) {
+    for (const a of Object.values(ui.windows)) apps.add(a);
+  }
+  if (foundry?.applications?.instances) {
+    for (const a of foundry.applications.instances.values()) apps.add(a);
+  }
+  for (const app of apps) {
+    const el = app.element?.jquery ? app.element[0] : app.element;
+    if (el) evaluateAndApplySkip(app, el);
   }
 }
 
@@ -286,22 +353,20 @@ Hooks.once("ready", () => {
   applySettings();
   requestAnimationFrame(() => {
     tagSameSpeaker();
-    applyGlassSkips();
+    reEvaluateAllSkips();
   });
   console.log(`${MODULE_ID} | ready, settings applied`);
 });
 
-/* 채팅 메시지가 새로 들어오거나 삭제될 때 재태깅
- * v13 의 ApplicationV2 채팅은 renderChatMessageHTML, 구버전 호환으로 renderChatMessage 도 함께 처리 */
+/* 채팅 메시지가 새로 들어오거나 삭제될 때 재태깅 */
 Hooks.on("renderChatMessageHTML", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("renderChatMessage", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("deleteChatMessage", () => requestAnimationFrame(tagSameSpeaker));
 Hooks.on("renderChatLog", () => requestAnimationFrame(tagSameSpeaker));
 
-/* 윈도우가 새로 그려질 때마다 글래스 제외 규칙 재적용
- * (Party HUD 같이 후행 로드되는 모듈도 잡기 위해) */
-Hooks.on("renderApplication", () => requestAnimationFrame(applyGlassSkips));
-Hooks.on("renderApplicationV2", () => requestAnimationFrame(applyGlassSkips));
+/* 윈도우가 그려질 때마다 그 윈도우만 코어/모듈 판별해서 스킵 결정 */
+Hooks.on("renderApplication", (app, html) => evaluateAndApplySkip(app, html));
+Hooks.on("renderApplicationV2", (app, html) => evaluateAndApplySkip(app, html));
 
 /* 설정 다이얼로그 열릴 때 컬러 피커 끼워넣기 */
 Hooks.on("renderSettingsConfig", (app, html) => {
