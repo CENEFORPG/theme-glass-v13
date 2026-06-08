@@ -145,14 +145,9 @@ dialog.application,
   backdrop-filter: none;
 }
 
-/* ---- 채팅 메시지 ---- */
-#chat-log .chat-message,
-#sidebar .chat-message {
-  background: var(--glass-bg-subtle) !important;
-  border: var(--glass-border);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
+/* ---- 채팅 메시지 ----
+ * 메시지 각각에 BG/보더/블러 주지 않음. 사이드바 글래스 위에 텍스트만 얹기.
+ * 같은 화자 병합 등은 외부 모듈에 위임. */
 
 /* ---- 채팅 입력창 ---- */
 #chat-form,
@@ -384,33 +379,6 @@ dialog.application.glass-skip {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border: none !important;
-}
-
-/* ===================================================================
- * 같은 화자가 연속으로 말할 때 메시지 사이 구분선 제거
- * (JS 가 .glass-same-speaker / .glass-has-follower 클래스를 붙임)
- * =================================================================== */
-
-#chat-log .chat-message.glass-same-speaker {
-  border-top: 0 !important;
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  margin-top: 0 !important;
-  padding-top: 4px !important;
-}
-
-#chat-log .chat-message.glass-has-follower {
-  border-bottom: 0 !important;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 4px !important;
-}
-
-/* 연속 메시지의 헤더는 시간만 살짝 줄여서 시각적 묶음 강조 (선택적) */
-#chat-log .chat-message.glass-same-speaker .message-sender {
-  opacity: 0.7;
-  font-size: 0.9em;
 }
 
 /* ===================================================================

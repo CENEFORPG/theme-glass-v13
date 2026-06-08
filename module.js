@@ -91,15 +91,6 @@ const SETTINGS = {
     range: { min: 0, max: 1, step: 0.05 },
     default: 0.6,
   },
-  mergeSameSpeakerChats: {
-    name: "같은 화자 채팅 합치기",
-    hint: "같은 사람/캐릭터가 연속으로 말할 때 메시지 사이의 구분선을 제거합니다.",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true,
-    onChange: () => requestAnimationFrame(tagSameSpeaker),
-  },
   glassSkipList: {
     name: "추가로 제외할 윈도우 (선택)",
     hint: "기본적으로 서드파티 모듈 윈도우는 자동으로 제외됩니다. 자동 판별이 잘 안 된 경우에만 여기에 키워드를 쉼표로 추가 (예: party-hud).",
@@ -304,40 +295,6 @@ function injectColorPreviews(htmlOrJq) {
   }
 }
 
-/* ---------- 같은 화자 연속 메시지 태깅 ---------- */
-function tagSameSpeaker() {
-  const log = document.querySelector("#chat-log");
-  if (!log) return;
-
-  const enabled =
-    game.settings?.get?.(MODULE_ID, "mergeSameSpeakerChats") ?? true;
-
-  const messages = Array.from(log.querySelectorAll(".chat-message"));
-
-  // 1차: 클래스 초기화
-  for (const m of messages) {
-    m.classList.remove("glass-same-speaker", "glass-has-follower");
-  }
-
-  // 비활성화 시 태깅 스킵
-  if (!enabled) return;
-
-  // 2차: 화자 비교로 태깅
-  let prevSender = null;
-  let prevEl = null;
-  for (const msg of messages) {
-    const senderEl = msg.querySelector(".message-sender");
-    const sender = (senderEl?.textContent || msg.dataset.authorId || "").trim();
-
-    if (sender && sender === prevSender && prevEl) {
-      msg.classList.add("glass-same-speaker");
-      prevEl.classList.add("glass-has-follower");
-    }
-    prevSender = sender;
-    prevEl = msg;
-  }
-}
-
 /* ---------- Hook 등록 ---------- */
 Hooks.once("init", () => {
   console.log(`${MODULE_ID} | initializing settings`);
@@ -351,18 +308,9 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   applySettings();
-  requestAnimationFrame(() => {
-    tagSameSpeaker();
-    reEvaluateAllSkips();
-  });
+  requestAnimationFrame(reEvaluateAllSkips);
   console.log(`${MODULE_ID} | ready, settings applied`);
 });
-
-/* 채팅 메시지가 새로 들어오거나 삭제될 때 재태깅 */
-Hooks.on("renderChatMessageHTML", () => requestAnimationFrame(tagSameSpeaker));
-Hooks.on("renderChatMessage", () => requestAnimationFrame(tagSameSpeaker));
-Hooks.on("deleteChatMessage", () => requestAnimationFrame(tagSameSpeaker));
-Hooks.on("renderChatLog", () => requestAnimationFrame(tagSameSpeaker));
 
 /* 윈도우가 그려질 때마다 그 윈도우만 코어/모듈 판별해서 스킵 결정 */
 Hooks.on("renderApplication", (app, html) => evaluateAndApplySkip(app, html));
